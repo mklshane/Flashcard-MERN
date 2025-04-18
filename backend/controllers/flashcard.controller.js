@@ -1,120 +1,161 @@
-import Flashcard from "../models/flashcard.model.js"; // Update the path if necessary
+import Flashcard from "../models/flashcard.model.js";
 import mongoose from "mongoose";
-
 
 // Get all flashcards
 export const getFlashcards = async (req, res) => {
   try {
-    const flashcards = await Flashcard.find({}); // Fetch all flashcards from the database
-    res.status(200).json({ success: true, data: flashcards }); // Send back the flashcards
+    const flashcards = await Flashcard.find({}).populate("deck", "title");
+    res.status(200).json({ success: true, data: flashcards });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch flashcards" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch flashcards",
+    });
+  }
+};
+
+// Get flashcards by deck ID
+export const getFlashcardsByDeck = async (req, res) => {
+  const { deckId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(deckId)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid deck ID format",
+    });
+  }
+
+  try {
+    const flashcards = await Flashcard.find({ deck: deckId });
+    res.status(200).json({ success: true, data: flashcards });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch flashcards for this deck",
+    });
   }
 };
 
 // Create a new flashcard
 export const createFlashcard = async (req, res) => {
-  const { question, answer } = req.body;
+  const { question, answer, deck } = req.body;
 
-  // Validate request data
-  if (!question || !answer) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message: "Both question and answer are required",
-      });
+  if (!question || !answer || !deck) {
+    return res.status(400).json({
+      success: false,
+      message: "Question, answer, and deck ID are required",
+    });
   }
 
   try {
-    // Create and save the new flashcard
-    const newFlashcard = new Flashcard({ question, answer });
+    const newFlashcard = new Flashcard({ question, answer, deck });
     await newFlashcard.save();
-    res.status(201).json({ success: true, data: newFlashcard }); // Send back the created flashcard
+    res.status(201).json({ success: true, data: newFlashcard });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Error creating flashcard" });
+    res.status(500).json({
+      success: false,
+      message: "Error creating flashcard",
+    });
   }
 };
 
 // Update a flashcard by ID
 export const updateFlashcard = async (req, res) => {
-  const { id } = req.params; // Get the flashcard ID from the URL
-  const { question, answer } = req.body; // Get updated data from the request body
+  const { id } = req.params;
+  const { question, answer } = req.body;
 
-  // Validate the ID format
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({
       success: false,
-      message: "Invalid ID format",
+      message: "Invalid flashcard ID format",
     });
   }
 
   try {
-    // Find the flashcard by ID and update it
     const updatedFlashcard = await Flashcard.findByIdAndUpdate(
       id,
       { question, answer },
       { new: true }
     );
 
-    // Check if the flashcard was found and updated
     if (!updatedFlashcard) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Flashcard not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Flashcard not found",
+      });
     }
 
-    // Return the updated flashcard
     res.status(200).json({ success: true, data: updatedFlashcard });
-
   } catch (err) {
-    // Log error for debugging
     console.error("Update Error:", err.message);
-    res
-      .status(500)
-      .json({ success: false, message: "Error updating flashcard" });
+    res.status(500).json({
+      success: false,
+      message: "Error updating flashcard",
+    });
   }
 };
 
 // Delete a flashcard by ID
 export const deleteFlashcard = async (req, res) => {
-  const { id } = req.params; // Get the flashcard ID from the URL
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid flashcard ID format",
+    });
+  }
 
   try {
-    // Find the flashcard by ID and delete it
     const deletedFlashcard = await Flashcard.findByIdAndDelete(id);
+
     if (!deletedFlashcard) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Flashcard not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Flashcard not found",
+      });
     }
-    res
-      .status(200)
-      .json({ success: true, message: "Flashcard deleted successfully" }); // Confirm deletion
+
+    res.status(200).json({
+      success: true,
+      message: "Flashcard deleted successfully",
+    });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Error deleting flashcard" });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting flashcard",
+    });
   }
 };
 
-  export const getID = async (req, res) => {
+// Get flashcard by its own ID
+export const getID = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid flashcard ID format",
+    });
+  }
+
   try {
-    const flashcard = await Flashcard.findById(req.params.id);
+    const flashcard = await Flashcard.findById(id).populate("deck", "title");
     if (!flashcard) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Flashcard not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Flashcard not found",
+      });
     }
     res.status(200).json({ success: true, data: flashcard });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };

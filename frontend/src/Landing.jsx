@@ -183,7 +183,7 @@ function Landing() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate("/app");
+    navigate("/decks");
   };
 
   return (

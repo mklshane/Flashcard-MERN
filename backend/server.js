@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 
 import flashcardRoutes from "./routes/flashcard.route.js";
+import deckRoutes from "./routes/deck.route.js";
 import cors from 'cors';
 
 
@@ -14,6 +15,9 @@ const PORT = process.env.PORT || 5000;
 app.use(cors()); // Add this before routes
 
 app.use(express.json()); // Accept JSON in the request body
+
+app.use("/api/decks", deckRoutes);
+app.use("/api/flashcards", flashcardRoutes);
 
 // Route for flashcards
 app.use("/api/flashcards", flashcardRoutes);

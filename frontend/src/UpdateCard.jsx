@@ -2,7 +2,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-// Container style (matching App.jsx)
 const containerStyle = {
   fontFamily: "'Montserrat', sans-serif",
   padding: "20px",
@@ -15,7 +14,6 @@ const containerStyle = {
   flexDirection: "column",
 };
 
-// Form card style
 const formCardStyle = {
   backgroundColor: "white",
   borderRadius: "10px",
@@ -27,7 +25,6 @@ const formCardStyle = {
   margin: "20px 0",
 };
 
-// Input style (matching App.jsx)
 const inputStyle = {
   fontFamily: "'Montserrat', sans-serif",
   padding: "12px 15px",
@@ -39,7 +36,6 @@ const inputStyle = {
   fontSize: "1rem",
 };
 
-// Button styles (matching App.jsx)
 const buttonStyle = {
   fontFamily: "'Montserrat', sans-serif",
   padding: "12px 25px",
@@ -72,12 +68,11 @@ const secondaryButtonHoverStyle = {
 };
 
 function UpdateCard() {
-  const { id } = useParams();
+  const { deckId, id } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ question: "", answer: "" });
   const [error, setError] = useState(null);
   const [isHovered, setIsHovered] = useState({});
-
   const baseURL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -101,16 +96,14 @@ function UpdateCard() {
   const handleSubmit = async () => {
     try {
       await axios.put(`${baseURL}/${id}`, formData);
-      // Navigate back to the main view with the updated card focused
-      navigate(`/app/?selectedCard=${id}`);
+      navigate(`/decks/${deckId}`);
     } catch {
       setError("Failed to update flashcard");
     }
   };
 
   const handleCancel = () => {
-    // Navigate back to the main view with the same card focused
-    navigate(`/app/?selectedCard=${id}`);
+    navigate(`/decks/${deckId}`);
   };
 
   const handleMouseEnter = (buttonName) => {
