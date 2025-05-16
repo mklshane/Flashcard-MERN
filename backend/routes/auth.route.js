@@ -20,4 +20,11 @@ router.post("/send-reset-otp", sendResetOTP);
 
 router.post("/reset-password", resetPassword);
 
+router.get("/check", userAuth, (req, res) => {
+  res.json({
+    success: true,
+    user: { id: req.userId },
+  });
+});
+
 export default router;

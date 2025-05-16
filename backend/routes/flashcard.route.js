@@ -7,18 +7,15 @@ import {
   getID
 } from "../controllers/flashcard.controller.js";
 import { getFlashcardsByDeck } from "../controllers/flashcard.controller.js";
-
-
+import userAuth from "../middleware/userAuth.js";
 
 const router = express.Router();
 
-// Define routes without '/api/flashcards' prefix as it's already in server.js
-router.get("/deck/:deckId", getFlashcardsByDeck);
-router.get("/", getFlashcards);
-router.post("/", createFlashcard);
-router.put("/:id", updateFlashcard);
-router.delete("/:id", deleteFlashcard);
-router.get("/:id", getID);
-
+router.get("/deck/:deckId", userAuth, getFlashcardsByDeck);
+router.get("/", userAuth, getFlashcards);
+router.post("/", userAuth, createFlashcard);
+router.put("/:id", userAuth, updateFlashcard);
+router.delete("/:id", userAuth, deleteFlashcard);
+router.get("/:id", userAuth, getID);
 
 export default router;

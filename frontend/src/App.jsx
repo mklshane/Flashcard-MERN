@@ -233,6 +233,7 @@ const cancelButtonStyle = {
   color: colors.textDark,
 };
 
+
 function App() {
   const { deckId } = useParams();
   const navigate = useNavigate();
@@ -321,8 +322,9 @@ function App() {
   const fetchDeckDetails = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/decks/${deckId}`
-      );
+        `http://localhost:5000/api/decks/${deckId}`, {
+          withCredentials: true,
+        });
       console.log("Deck details response:", response.data);
 
       // Check if data is an array and find the deck with the given deckId
@@ -342,7 +344,9 @@ function App() {
 
   const fetchFlashcards = async () => {
     try {
-      const res = await axios.get(`${baseURL}/deck/${deckId}`);
+      const res = await axios.get(`${baseURL}/deck/${deckId}`, {
+        withCredentials: true,
+      });
 
       if (res.data.data) {
         setFlashcards(res.data.data);
@@ -351,15 +355,21 @@ function App() {
       }
     } catch (err) {
       setError("Error fetching flashcards.");
+      console.error(err);
     }
   };
+  
 
   const handleCreate = async () => {
     if (!formData.question || !formData.answer) return;
     await axios.post(`${baseURL}`, {
       ...formData,
       deck: deckId,
-    });
+    },
+    {
+      withCredentials: true,
+    }
+  );
     setFormData({ question: "", answer: "" });
     fetchFlashcards();
   };
@@ -441,6 +451,7 @@ function App() {
           </svg>
           Back
         </button>
+
         <span style={navTitleStyle}>{deckTitle} </span>
         <div style={{ width: "100px" }}></div>
       </div>

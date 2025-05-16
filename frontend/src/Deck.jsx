@@ -266,6 +266,48 @@ const styles = {
     bottom: "22px",
     position: "absolute",
   },
+
+  // Add these to your styles object
+  profileCircle: {
+    width: "35px",
+    height: "35px",
+    borderRadius: "50%",
+    backgroundColor: colors.primary,
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    position: "relative",
+  },
+
+  profileDropdown: {
+    position: "absolute",
+    top: "50px",
+    right: "0",
+    backgroundColor: colors.cardBg,
+    borderRadius: "8px",
+    boxShadow: `0 4px 6px ${colors.shadow}`,
+    width: "200px",
+    overflow: "hidden",
+    zIndex: 1001,
+  },
+
+  dropdownItem: {
+    padding: "12px 16px",
+    color: colors.textDark,
+    cursor: "pointer",
+    transition: "background-color 0.2s",
+    "&:hover": {
+      backgroundColor: colors.background,
+    },
+  },
+
+  dropdownDivider: {
+    height: "1px",
+    backgroundColor: colors.border,
+    margin: "4px 0",
+  },
 };
 
 /**
@@ -273,12 +315,15 @@ const styles = {
  * @param {string} deckId - ID of the deck to delete
  * @param {Event} e - Click event
  */
+
 const deleteDeck = async (deckId, e) => {
-  e.stopPropagation(); // Prevent the deck click event from firing
+  e.stopPropagation();
   try {
     if (window.confirm("Are you sure you want to delete this deck?")) {
-      await axios.delete(`http://localhost:5000/api/decks/${deckId}`);
-      window.location.reload(); // Reload the page to reflect changes
+      await axios.delete(`http://localhost:5000/api/decks/${deckId}`, {
+        withCredentials: true, // This is crucial for session auth
+      });
+      window.location.reload();
     }
   } catch (err) {
     console.error("Error deleting deck:", err);
@@ -286,11 +331,109 @@ const deleteDeck = async (deckId, e) => {
   }
 };
 
-/**
- * Main DeckPage component
- */
+
+
+const ProfileDropdown = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [userInitial, setUserInitial] = useState("");
+  const [userData, setUserData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      try {
+        const userId = localStorage.getItem("userId");
+        const response = await axios.get(
+          "http://localhost:5000/api/user/data",
+          {
+            withCredentials: true,
+            headers: {
+              "x-user-id": userId,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          const { name } = response.data.userData;
+          setUserData(response.data.userData);
+          setUserInitial(name ? name.charAt(0).toUpperCase() : "?");
+        } else {
+          throw new Error(response.data.message || "Failed to fetch user data");
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setUserData(null);
+        setUserInitial("!");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://localhost:5000/api/auth/logout",
+        {},
+        { withCredentials: true }
+      );
+      navigate("/");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      alert("Logout failed. Please try again.");
+    }
+  };
+
+  // Click outside handler to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isOpen && !event.target.closest("[data-profile-dropdown]")) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen]);
+
+  return (
+    <div style={{ position: "relative" }} data-profile-dropdown>
+      <div
+        style={styles.profileCircle}
+        onClick={() => setIsOpen(!isOpen)}
+        title={userData?.name || "Profile"}
+      >
+        {isLoading ? (
+          <div style={styles.spinner} />
+        ) : (
+          <span style={{ fontWeight: "bold" }}>{userInitial}</span>
+        )}
+      </div>
+
+      {isOpen && (
+        <div style={styles.profileDropdown}>
+          <div style={styles.dropdownItem}>
+            {userData?.name || "User"}
+            {userData?.isVerified && (
+              <span style={{ marginLeft: "8px", color: colors.primary }}>
+                ✓
+              </span>
+            )}
+          </div>
+          <div style={styles.dropdownDivider}></div>
+          <div style={styles.dropdownItem} onClick={handleLogout}>
+            Logout
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 function DeckPage() {
-  // State management
   const [decks, setDecks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -298,13 +441,13 @@ function DeckPage() {
   const [newDeck, setNewDeck] = useState({ title: "", description: "" });
   const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  
 
-  // Fetch decks on component mount
   useEffect(() => {
     fetchDecks();
   }, []);
 
-  // Handle body overflow when modal is open
   useEffect(() => {
     document.body.style.overflow = showModal ? "hidden" : "auto";
     return () => {
@@ -312,53 +455,62 @@ function DeckPage() {
     };
   }, [showModal]);
 
-  /**
-   * Fetches decks and their associated flashcards from the API
-   */
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/auth/check", {
+          credentials: "include",
+        });
+        if (!res.ok) navigate("/");
+      } catch (error) {
+        navigate("/");
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+
   const fetchDecks = async () => {
     try {
-      // Send a GET request to the server to fetch all decks
-      const response = await axios.get("http://localhost:5000/api/decks");
+      setLoading(true);
+      setError(null);
 
-      // Fetch flashcards for each deck in parallel using Promise.all
-      const decksWithFlashcards = await Promise.all(
-        response.data.data.map(async (deck) => {
-          try {
-            // For each deck, fetch its associated flashcards
-            const flashcardsRes = await axios.get(
-              `http://localhost:5000/api/flashcards/deck/${deck._id}`
-            );
+      console.log("Fetching decks..."); // Debug log
+      const res = await fetch("http://localhost:5000/api/decks", {
+        method: "GET",
+        credentials: "include",
+        withCredentials: true,
+        headers: {
+          Accept: "application/json",
+          "Cache-Control": "no-cache", // Prevent caching issues
+        },
+      });
 
-            // Return the deck with its flashcards added, or an empty array if no flashcards are found
-            return {
-              ...deck,
-              flashcards: flashcardsRes.data.data || [], // Default to an empty array if no flashcards
-            };
-          } catch (err) {
-            // If there's an error fetching flashcards for a deck, log the error
-            console.error(
-              `Error fetching flashcards for deck ${deck._id}:`,
-              err
-            );
-            // Return the deck with an empty flashcards array in case of an error
-            return { ...deck, flashcards: [] };
-          }
-        })
-      );
+      console.log("Response status:", res.status); // Debug log
 
-      // Update the state with the decks and their associated flashcards
-      setDecks(decksWithFlashcards);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Error response:", errorData); // Debug log
+
+        if (res.status === 401) {
+          localStorage.removeItem("token"); // Clear any stale tokens
+          navigate("/");
+          throw new Error("Session expired. Please login again.");
+        }
+        throw new Error(errorData.message || "Failed to fetch decks");
+      }
+
+      const data = await res.json();
+      setDecks(data.data || []); // Handle both response formats
     } catch (err) {
-      // If there's an error fetching the decks, log it and update the error state
       console.error("Error fetching decks:", err);
-      setError("Failed to load decks. Please try again.");
+      setError(err.message);
     } finally {
-      // Regardless of success or failure, stop the loading state
       setLoading(false);
     }
   };
+  
 
-  // Event handlers
   const handleDeckClick = (id) => navigate(`/decks/${id}`);
   const handleCreateDeck = (e) => {
     if (e) e.preventDefault();
@@ -375,17 +527,15 @@ function DeckPage() {
     setNewDeck((prev) => ({ ...prev, [name]: value }));
   };
 
-  /**
-   * Handles form submission for creating a new deck
-   * @param {Event} e - Form submit event
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setIsCreating(true);
-      await axios.post("http://localhost:5000/api/decks", newDeck);
+      await axios.post("http://localhost:5000/api/decks", newDeck, {
+        withCredentials: true,
+      });
       handleCloseModal();
-      window.location.reload(); // Force page reload after successful creation
+      fetchDecks(); // Refresh decks instead of reloading
     } catch (err) {
       console.error("Error creating deck:", err);
       setError("Failed to create deck. Please try again.");
@@ -394,42 +544,25 @@ function DeckPage() {
     }
   };
 
+  
+
   return (
     <div style={styles.container}>
-      {/* Navigation Bar */}
       <div style={styles.navBar}>
-        <div style={styles.navTitle}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M19 11H5M19 11C20.1046 11 21 11.8954 21 13V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V13C3 11.8954 3.89543 11 5 11M19 11V9C19 7.89543 18.1046 7 17 7M5 11V9C5 7.89543 5.89543 7 7 7M7 7V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V7M7 7H17"
-              stroke={colors.primary}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          WeFlash
+        <div style={styles.navTitle}>WeFlash</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <button onClick={handleCreateDeck} style={styles.navButton}>
+            New Deck
+          </button>
+         <ProfileDropdown /> 
         </div>
-        <button onClick={handleCreateDeck} style={styles.navButton}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 4V20M4 12H20"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-          New Deck
-        </button>
       </div>
 
-      {/* Main Content */}
       <div style={styles.decksContainer}>
         <div style={styles.headerContainer}>
           <h1 style={styles.header}>Your Decks</h1>
         </div>
 
-        {/* Conditional Rendering - Fixed Syntax */}
         {loading ? (
           <div style={styles.loading}>
             <div style={styles.spinner}></div>
@@ -458,63 +591,53 @@ function DeckPage() {
                 style={styles.deckCard}
                 onClick={() => handleDeckClick(deck._id)}
               >
-                {/* Delete Button */}
+                <div style={styles.deckTitle}>{deck.title}</div>
+                <div style={styles.deckDescription}>{deck.description}</div>
+                <div style={styles.cardCount}>
+                  0 cards
+                  {/* {deck.flashcards.length} cards */}
+                </div>
                 <button
                   style={styles.deleteButton}
                   onClick={(e) => deleteDeck(deck._id, e)}
-                  title="Delete deck"
                 >
                   <svg
-                    width="18"
-                    height="18"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="17.5"
+                    height="17.5"
                     viewBox="0 0 24 24"
                     fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-trash2-icon lucide-trash-2"
                   >
-                    <path
-                      d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    <line x1="10" x2="10" y1="11" y2="17" />
+                    <line x1="14" x2="14" y1="11" y2="17" />
                   </svg>
                 </button>
-
-                {/* Deck Content */}
-                <div style={styles.deckTitle}>{deck.title}</div>
-                {deck.description && (
-                  <div style={styles.deckDescription}>{deck.description}</div>
-                )}
-                <div style={styles.cardCount}>
-                  {deck.flashcards.length}{" "}
-                  {deck.flashcards.length === 1 ? "card" : "cards"}
-                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Create Deck Modal */}
       {showModal && (
-        <div
-          style={styles.modalOverlay}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) handleCloseModal();
-          }}
-        >
+        <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
             <h2 style={styles.modalHeader}>Create New Deck</h2>
             <form onSubmit={handleSubmit}>
               <input
-                type="text"
                 name="title"
-                placeholder="Deck title"
+                placeholder="Deck Title"
                 value={newDeck.title}
                 onChange={handleInputChange}
-                style={styles.input}
                 required
+                style={styles.input}
               />
               <textarea
                 name="description"
@@ -528,52 +651,21 @@ function DeckPage() {
                   type="button"
                   onClick={handleCloseModal}
                   style={{ ...styles.button, ...styles.cancelButton }}
-                  disabled={isCreating}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   style={styles.button}
-                  disabled={isCreating || !newDeck.title.trim()}
+                  disabled={isCreating}
                 >
-                  {isCreating ? (
-                    <>
-                      <div
-                        style={{
-                          ...styles.spinner,
-                          width: "16px",
-                          height: "16px",
-                          marginRight: "8px",
-                        }}
-                      />
-                      Creating...
-                    </>
-                  ) : (
-                    "Create Deck"
-                  )}
+                  {isCreating ? "Creating..." : "Create Deck"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      {/* Global Styles */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        button:hover:not(:disabled) {
-          background-color: ${colors.primaryHover};
-          transform: translateY(-1px);
-        }
-        button[disabled] {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-      `}</style>
     </div>
   );
 }

@@ -9,7 +9,8 @@ export const createDeck = async (req, res) => {
   }
 
   try {
-    const newDeck = new Deck({ title, description });
+    // Attach the authenticated user's ID to the deck
+    const newDeck = new Deck({ title, description, user: req.userId });
     await newDeck.save();
     res.status(201).json({ success: true, data: newDeck });
   } catch (err) {
@@ -17,10 +18,12 @@ export const createDeck = async (req, res) => {
   }
 };
 
+
 export const getDecks = async (req, res) => {
   try {
-    const decks = await Deck.find({});
+    const decks = await Deck.find({ user: req.userId }); // filter by user
     res.status(200).json({ success: true, data: decks });
+    console.log(decks[0]);
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch decks" });
   }
@@ -30,33 +33,31 @@ export const deleteDeck = async (req, res) => {
   const { deckID } = req.params;
 
   try {
-    // Find the deck by ID and delete it
-    const deletedDeck = await Deck.findByIdAndDelete(deckID);
+    // Find the deck by ID and user, so user can only delete their own decks
+    const deletedDeck = await Deck.findOneAndDelete({
+      _id: deckID,
+      user: req.userId,
+    });
 
-    // If no deck was found with that ID
     if (!deletedDeck) {
       return res.status(404).json({
         success: false,
-        message: "Deck not found",
+        message: "Deck not found or not authorized",
       });
     }
 
-    // Success response
     return res.status(200).json({
       success: true,
       message: "Deck deleted successfully",
       data: deletedDeck,
     });
   } catch (error) {
-    // Handle different types of errors
     if (error.name === "CastError") {
       return res.status(400).json({
         success: false,
         message: "Invalid deck ID format",
       });
     }
-
-    // Generic server error
     return res.status(500).json({
       success: false,
       message: "Failed to delete deck",
@@ -65,28 +66,28 @@ export const deleteDeck = async (req, res) => {
   }
 };
 
+
 export const getDeckDetails = async (req, res) => {
-  const { deckId } = req.params; // Extract deckId from request params
+  const { deckId } = req.params;
 
   try {
-    // Fetch deck by ID and select only the title, description, and _id fields
-    const deck = await Deck.findById(deckId).select("title description _id");
+    const deck = await Deck.findOne({
+      _id: deckId,
+      user: req.userId,
+    }).select("title description _id");
 
-    // If deck not found, return a 404 error
     if (!deck) {
       return res.status(404).json({
         success: false,
-        message: "Deck not found",
+        message: "Deck not found or not authorized",
       });
     }
 
-    // Return the deck data
     res.status(200).json({
       success: true,
       data: deck,
     });
   } catch (err) {
-    // Handle errors (e.g., invalid ID format)
     if (err.name === "CastError") {
       return res.status(400).json({
         success: false,
@@ -94,11 +95,9 @@ export const getDeckDetails = async (req, res) => {
       });
     }
 
-    // Generic error handling
     res.status(500).json({
       success: false,
       message: "Failed to fetch deck details",
     });
   }
 };
-

@@ -7,6 +7,7 @@ const deckSchema = new mongoose.Schema({
     required: true,
   },
   description: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 });
 
 const Deck = mongoose.model("Deck", deckSchema);

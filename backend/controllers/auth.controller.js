@@ -28,7 +28,7 @@ export const signup = async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
     //Sending welcome email
@@ -49,39 +49,73 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const {email, password} = req.body;
+  const { email, password } = req.body;
 
-  if(!email || !password){
-    return res.json({success:false, message: 'Email and password are required'});
+  // Validate input
+  if (!email || !password) {
+    return res.status(400).json({
+      // Use proper status code
+      success: false,
+      message: "Email and password are required",
+    });
   }
 
   try {
-    
-    const user = await User.findOne({email});
-    if(!user){
-      return res.json({success:false, message: 'User does not exist'});
+    // Find user with case-insensitive email
+    const user = await User.findOne({
+      email: { $regex: new RegExp(`^${email}$`, "i") },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        // Use 401 for auth failures
+        success: false,
+        message: "Invalid credentials", // Generic message for security
+      });
     }
 
+    // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
-    if(!isMatch){
-      return res.json({ success: false, message: "Invalid password" });
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials", // Same message as above
+      });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {expiresIn: "7d"});
+    // Create JWT token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
+    // Set secure cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/", // Important for cookie accessibility
+      domain: process.env.COOKIE_DOMAIN, // If using cross-domain cookies
     });
 
-    return res.json({success:true});
-
+    // Return minimal user info
+    return res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (error) {
-    res.json({success: false, message: error.message});
+    console.error("Login error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
+
 
 export const logout = async (req, res) => {
   try {
