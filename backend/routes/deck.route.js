@@ -5,13 +5,13 @@ import {
   deleteDeck,
   getDeckDetails,
 } from "../controllers/deck.controller.js";
-import userAuth from "../middleware/userAuth.js";
+import firebaseAuth from "../middleware/firebaseAuth.js";
 
 const router = express.Router();
 
-router.post("/", userAuth, createDeck);
-router.get("/", userAuth, getDecks);
-router.delete("/:deckID", userAuth, deleteDeck);
-router.get("/:deckId", userAuth, getDeckDetails);
+router.post("/", firebaseAuth, createDeck);
+router.get("/", firebaseAuth, getDecks);
+router.delete("/:deckID", firebaseAuth, deleteDeck);
+router.get("/:deckId", firebaseAuth, getDeckDetails);
 
 export default router;

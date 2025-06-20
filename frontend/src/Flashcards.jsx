@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 
+const getAuthHeaders = () => {
+  const firebaseToken = localStorage.getItem("firebaseToken");
+  return firebaseToken ? { Authorization: `Bearer ${firebaseToken}` } : {};
+};
+
 // Modern color palette
 const colors = {
   primary: "#4F46E5", // Indigo
@@ -286,6 +291,7 @@ function Flashcards() {
             `${baseURL.replace("flashcards", "decks")}/${deckId}`,
             {
               withCredentials: true,
+              headers: getAuthHeaders(),
             }
           );
           setDeckTitle(deckRes.data.data?.title || "Untitled Deck");
@@ -293,12 +299,16 @@ function Flashcards() {
           // Fetch flashcards for the deck
           const flashcardRes = await axios.get(`${baseURL}/deck/${deckId}`, {
             withCredentials: true,
+            headers: getAuthHeaders(),
           });
           setFlashcards(flashcardRes.data.data || []);
         } else {
           // Fetch all flashcards
           setDeckTitle("All Flashcards");
-          const res = await axios.get(baseURL, { withCredentials: true });
+          const res = await axios.get(baseURL, {
+            withCredentials: true,
+            headers: getAuthHeaders(),
+          });
           setFlashcards(res.data.data || []);
         }
       } catch (err) {
@@ -332,6 +342,7 @@ function Flashcards() {
     try {
       const response = await axios.put(`${baseURL}/${id}`, editFormData, {
         withCredentials: true,
+        headers: getAuthHeaders(),
       });
       setFlashcards(
         flashcards.map((flashcard) =>
@@ -352,7 +363,10 @@ function Flashcards() {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this flashcard?")) {
       try {
-        await axios.delete(`${baseURL}/${id}`, { withCredentials: true });
+        await axios.delete(`${baseURL}/${id}`, {
+          withCredentials: true,
+          headers: getAuthHeaders(),
+        });
         setFlashcards(flashcards.filter((flashcard) => flashcard._id !== id));
       } catch (err) {
         setError("Failed to delete flashcard");

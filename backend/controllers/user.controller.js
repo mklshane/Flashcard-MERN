@@ -2,16 +2,17 @@ import User from "../models/user.model.js";
 
 export const getUserData = async (req, res) => {
   try {
-    const userId = req.userId || req.headers["x-user-id"]; // use what you set in the middleware
+    const firebaseUid = req.userId || req.headers["x-user-id"]; // from firebaseAuth middleware
 
-    if (!userId) {
+    if (!firebaseUid) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized: User not logged in.",
       });
     }
 
-    const user = await User.findById(userId);
+    // Search by firebaseUid instead of _id
+    const user = await User.findOne({ firebaseUid });
 
     if (!user) {
       return res.status(404).json({
@@ -35,4 +36,3 @@ export const getUserData = async (req, res) => {
     });
   }
 };
-  

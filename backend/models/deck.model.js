@@ -1,14 +1,19 @@
 // models/deck.model.js
 import mongoose from "mongoose";
 
-const deckSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
+const deckSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+    },
+    description: String,
+    user: { type: String, required: true }, // ✅ Store Firebase UID directly
   },
-  description: String,
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-});
+  {
+    timestamps: true, // optional but useful
+  }
+);
 
 const Deck = mongoose.model("Deck", deckSchema);
 export default Deck;

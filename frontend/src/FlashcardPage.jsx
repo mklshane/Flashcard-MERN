@@ -2,7 +2,13 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import "./FlashcardPage.css";
+import "./styles/FlashcardPage.css";
+
+const getAuthHeaders = () => {
+  const firebaseToken = localStorage.getItem("firebaseToken");
+  return firebaseToken ? { Authorization: `Bearer ${firebaseToken}` } : {};
+};
+
 
 function FlashcardPage() {
   const { deckId } = useParams();
@@ -85,7 +91,7 @@ function FlashcardPage() {
       const response = await axios.get(
         `${baseURL.replace("flashcards", "decks")}/${deckId}`,
         {
-          withCredentials: true,
+          headers: getAuthHeaders(),
         }
       );
       const deck = response.data.data;
@@ -99,7 +105,7 @@ function FlashcardPage() {
   const fetchFlashcards = async () => {
     try {
       const res = await axios.get(`${baseURL}/deck/${deckId}`, {
-        withCredentials: true,
+        headers: getAuthHeaders(),
       });
       if (res.data.data) {
         setFlashcards(res.data.data);
@@ -140,7 +146,7 @@ function FlashcardPage() {
       await axios.post(
         baseURL,
         { ...formData, deck: deckId },
-        { withCredentials: true }
+        { headers: getAuthHeaders() }
       );
       setFormData({ question: "", answer: "" });
       setError(null);
@@ -155,7 +161,7 @@ function FlashcardPage() {
     if (!flashcards[currentIndex]) return;
     try {
       const id = flashcards[currentIndex]._id;
-      await axios.delete(`${baseURL}/${id}`, { withCredentials: true });
+      await axios.delete(`${baseURL}/${id}`, { headers: getAuthHeaders() });
       const updatedFlashcards = flashcards.filter((_, i) => i !== currentIndex);
       setFlashcards(updatedFlashcards);
       setShowAnswer(false);
@@ -288,7 +294,7 @@ function FlashcardPage() {
       const aiRes = await axios.post(
         `${baseURL.replace("flashcards", "ai")}/generate-flashcards`,
         { text: extractedText, deckId: deckId },
-        { withCredentials: true, timeout: 60000 }
+        { headers: getAuthHeaders(), timeout: 60000 }
       );
       if (aiRes.data.success && aiRes.data.data) {
         setAiInputText("");
@@ -787,7 +793,7 @@ function FlashcardPage() {
                           question: updateData.question,
                           answer: updateData.answer,
                         },
-                        { withCredentials: true }
+                        { withCredentials: true, headers: getAuthHeaders() }
                       );
                       setShowUpdateModal(false);
                       fetchFlashcards();

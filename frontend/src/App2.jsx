@@ -9,13 +9,10 @@ import Landing from "./Landing.jsx";
 import SignInVer2 from "./SignInVer2.jsx";
 import Flashcards from "./Flashcards.jsx";
 import SpacedRepetitionPage from "./SpacedRep.jsx";
-import { useFirebaseAuthReady } from "./hooks/useFirebaseAuthReady.js";
+
 
 const App = () => {
-  const authReady = useFirebaseAuthReady();
-
-  if (!authReady) return <div>Loading authentication...</div>; // wait until firebase checks user
-
+ 
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
