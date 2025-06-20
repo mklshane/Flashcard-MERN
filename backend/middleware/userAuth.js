@@ -6,11 +6,8 @@ const userAuth = async (req, res, next) => {
   const token = req.cookies.token;
 
   if (!token) {
-    return res.status(401).json({
-      // Add status code
-      success: false,
-      message: "Not Authorized: Login Again",
-    });
+    // ⛔ Don't send response — let eitherAuth try firebaseAuth
+    return;
   }
 
   try {

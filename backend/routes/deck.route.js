@@ -9,7 +9,6 @@ import userAuth from "../middleware/userAuth.js";
 
 const router = express.Router();
 
-// Require authentication for all deck actions
 router.post("/", userAuth, createDeck);
 router.get("/", userAuth, getDecks);
 router.delete("/:deckID", userAuth, deleteDeck);

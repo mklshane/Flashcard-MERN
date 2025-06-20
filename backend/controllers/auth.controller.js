@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken"; // default import
 import User from "../models/user.model.js";
 import transporter from "../config/node.mailer.js";
 
+
 const { JsonWebTokenError } = jwt; // destructure after import
 
 export const signup = async (req, res) => {

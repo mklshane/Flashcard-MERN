@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     verifyOtp: {
       type: String,
-      default: ' ',
+      default: " ",
     },
     verifyOtpExpiresAt: {
       type: Number,
@@ -32,16 +32,18 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
     resetOtp: {
-        type: String, 
-        default: ' ',
+      type: String,
+      default: " ",
     },
     resetOtpExpiresAt: {
-        type: Number,
-        default: 0,
-    }
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
+
+
 
 export const User = mongoose.model('User', userSchema);
 export default User;
