@@ -2,4 +2,4 @@
 .env
 .env.*
 !.env.example
-serviceAccountKey.json
+backend/serviceAccountKey.json
