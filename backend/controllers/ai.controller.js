@@ -4,7 +4,7 @@ import Flashcard from "../models/flashcard.model.js";
 
 // Initialize OpenAI client with your API key
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 export const generateAndSaveFlashcards = async (req, res) => {
@@ -45,7 +45,7 @@ export const generateAndSaveFlashcards = async (req, res) => {
           [{"question": "Clear, specific question", "answer": "Concise, accurate answer"}, ...]
           
           Guidelines:
-          - Generate 10-50 flashcards depending on content length
+          - Generate 30-60 flashcards depending on content length
           - Focus on key concepts, definitions, and important facts
           - Keep questions clear and specific
           - Keep answers concise but complete

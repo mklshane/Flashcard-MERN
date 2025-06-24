@@ -1,14 +1,16 @@
+"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import "./styles/FlashcardPage.css";
+import ThemeToggle from "./components/ThemeToggle";
+import StudyModeMenu from "./components/StudyModeMenu";
 
 const getAuthHeaders = () => {
   const firebaseToken = localStorage.getItem("firebaseToken");
   return firebaseToken ? { Authorization: `Bearer ${firebaseToken}` } : {};
 };
-
 
 function FlashcardPage() {
   const { deckId } = useParams();
@@ -30,7 +32,9 @@ function FlashcardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(null);
   const [isPdfJsLoaded, setIsPdfJsLoaded] = useState(false);
-  const [cardDirection, setCardDirection] = useState(""); // Track navigation direction
+  const [cardDirection, setCardDirection] = useState("");
+  const [answerFirstMode, setAnswerFirstMode] = useState(false);
+  const [showModeMenu, setShowModeMenu] = useState(false);
 
   // Check if pdf.js is loaded and configure it
   useEffect(() => {
@@ -85,6 +89,9 @@ function FlashcardPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showUpdateModal, currentIndex, flashcards]);
+
+
+
 
   const fetchDeckDetails = async () => {
     try {
@@ -205,7 +212,9 @@ function FlashcardPage() {
     }
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      setError("PDF file is too large. Please upload a file smaller than 10MB.");
+      setError(
+        "PDF file is too large. Please upload a file smaller than 10MB."
+      );
       e.target.value = "";
       return;
     }
@@ -346,6 +355,7 @@ function FlashcardPage() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
+          strokeWidth="2"
         >
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <polyline points="22,4 12,14.01 9,11.01" />
@@ -361,7 +371,6 @@ function FlashcardPage() {
       </button>
     </div>
   );
-
 
   const handleBack = () => navigate("/decks");
 
@@ -394,11 +403,11 @@ function FlashcardPage() {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="var(--primary)"
+            stroke="currentColor"
+            strokeWidth="2"
           >
             <path
               d="M19 12H5M12 19l-7-7 7-7"
-              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -406,7 +415,7 @@ function FlashcardPage() {
           Back
         </button>
         <span className="nav-title">{deckTitle}</span>
-        <div className="nav-spacer"></div>
+        <ThemeToggle />
       </nav>
       <div className="content-container">
         {currentCard ? (
@@ -417,18 +426,43 @@ function FlashcardPage() {
               role="button"
               tabIndex={0}
               aria-label={`Toggle flashcard: ${
-                showAnswer ? "Show question" : "Show answer"
+                showAnswer
+                  ? answerFirstMode
+                    ? "Show answer"
+                    : "Show question"
+                  : answerFirstMode
+                  ? "Show question"
+                  : "Show answer"
               }`}
               onKeyDown={(e) => e.key === "Enter" && setShowAnswer(!showAnswer)}
             >
               <div className="question-counter">
                 Card {currentIndex + 1} of {flashcards.length}
               </div>
+              <div className="card-menu">
+                
+                <StudyModeMenu
+                  answerFirstMode={answerFirstMode}
+                  setAnswerFirstMode={setAnswerFirstMode}
+                  setShowAnswer={setShowAnswer}
+                  isHovered={isHovered}
+                  handleMouseEnter={handleMouseEnter}
+                  handleMouseLeave={handleMouseLeave}
+                />
+              </div>
               <div className="card-content">
                 {showAnswer ? (
-                  <div className="answer-text">{currentCard.answer}</div>
+                  <div className="answer-text">
+                    {answerFirstMode
+                      ? currentCard.question
+                      : currentCard.answer}
+                  </div>
                 ) : (
-                  <div className="card-text">{currentCard.question}</div>
+                  <div className="card-text">
+                    {answerFirstMode
+                      ? currentCard.answer
+                      : currentCard.question}
+                  </div>
                 )}
               </div>
               <button
@@ -493,6 +527,7 @@ function FlashcardPage() {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
+                    strokeWidth="2"
                   >
                     <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
                     <path d="m15 5 4 4" />
@@ -511,6 +546,7 @@ function FlashcardPage() {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
+                    strokeWidth="2"
                   >
                     <path d="M3 6h18" />
                     <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
@@ -533,7 +569,8 @@ function FlashcardPage() {
                     height="20"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="var(--primary)"
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
                     <path d="m18 14 4 4-4 4" />
                     <path d="m18 2 4 4-4 4" />
@@ -546,14 +583,42 @@ function FlashcardPage() {
             </div>
           </>
         ) : (
-          <p className="empty-state">No flashcards available</p>
+          <div className="empty-state">
+            <svg
+              className="empty-state-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M3 3h18v18H3z" />
+              <path d="M3 9h18" />
+              <path d="M9 9v12" />
+            </svg>
+            <h3>No flashcards available</h3>
+            <p>Create your first flashcard to get started</p>
+          </div>
         )}
         <div className="input-container">
+          <div className="section-header">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <h3>Create New Flashcard</h3>
+          </div>
           <div className="input-wrapper">
             <label className="input-label">Question</label>
             <textarea
               className="input textarea"
-              placeholder="Enter question..."
+              placeholder="Enter your question here..."
               value={formData.question}
               onChange={(e) =>
                 setFormData({ ...formData, question: e.target.value })
@@ -567,7 +632,7 @@ function FlashcardPage() {
             <label className="input-label">Answer</label>
             <textarea
               className="input textarea"
-              placeholder="Enter answer..."
+              placeholder="Enter the answer here..."
               value={formData.answer}
               onChange={(e) =>
                 setFormData({ ...formData, answer: e.target.value })
@@ -602,7 +667,14 @@ function FlashcardPage() {
         </div>
 
         <div className="input-container ai-section">
-          <h3 className="ai-section-title">🤖 Generate Flashcards</h3>
+          <div className="section-header ai-header">
+            <div>
+              <h3>Generate Flashcard</h3>
+              <p className="section-subtitle">
+                Generate flashcards automatically from your study material
+              </p>
+            </div>
+          </div>
           {showSuccess && (
             <SuccessMessage
               message={showSuccess}
@@ -617,6 +689,7 @@ function FlashcardPage() {
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
+                strokeWidth="2"
               >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="15" y1="9" x2="9" y2="15" />
@@ -633,7 +706,7 @@ function FlashcardPage() {
               </span>
             </label>
             <textarea
-              className="input textarea"
+              className="input textarea ai-textarea"
               placeholder="Paste your study material here... (minimum 50 characters)"
               value={aiInputText}
               onChange={handleTextChange}
@@ -643,10 +716,12 @@ function FlashcardPage() {
             <div className="character-count">
               {aiInputText.length}/50,000 characters
             </div>
-            <div
-              className="text-progress"
-              style={{ width: `${(aiInputText.length / 50000) * 100}%` }}
-            ></div>
+            <div className="text-progress-container">
+              <div
+                className="text-progress"
+                style={{ width: `${(aiInputText.length / 50000) * 100}%` }}
+              ></div>
+            </div>
           </div>
           <div className="divider">
             <span>OR</span>
@@ -671,6 +746,7 @@ function FlashcardPage() {
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
+                  strokeWidth="2"
                 >
                   <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                   <polyline points="14,2 14,8 20,8" />
@@ -687,7 +763,7 @@ function FlashcardPage() {
             }`}
             disabled={isGenerating || (!aiInputText.trim() && !pdfFile)}
             onClick={handleGenerateFlashcards}
-            aria-label="Generate flashcards with AI"
+            aria-label="Generate"
           >
             {isGenerating ? (
               <>
@@ -698,6 +774,7 @@ function FlashcardPage() {
                   fill="none"
                   stroke="currentColor"
                   className="spinner"
+                  strokeWidth="2"
                 >
                   <path d="M21 12a9 9 0 11-6.219-8.56" />
                 </svg>
@@ -711,59 +788,68 @@ function FlashcardPage() {
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
+                  strokeWidth="2"
                 >
                   <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
-                Generate Flashcards with AI
+                Generate
               </>
             )}
           </button>
           <div className="ai-note">
-            AI will generate 10-50 flashcards based on your content
+            AI will generate 30-60 flashcards based on your content
           </div>
         </div>
 
         {showUpdateModal && (
           <div className="modal-overlay" role="dialog" aria-modal="true">
             <div className="modal-content">
-              <h2 className="modal-header">
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--primary)"
-                >
-                  <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-                  <path d="m15 5 4 4" />
-                </svg>
-                Update Flashcard
-              </h2>
-              <div className="modal-input-group">
-                <label className="modal-label">Question</label>
-                <textarea
-                  className="input textarea"
-                  placeholder="Enter your question..."
-                  value={updateData.question}
-                  onChange={(e) =>
-                    setUpdateData({ ...updateData, question: e.target.value })
-                  }
-                  aria-label="Update question"
-                  aria-required="true"
-                />
+              <div className="modal-header">
+                <div className="modal-icon">
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+                    <path d="m15 5 4 4" />
+                  </svg>
+                </div>
+                <div>
+                  <h2>Update Flashcard</h2>
+                  <p className="modal-subtitle">Edit your flashcard content</p>
+                </div>
               </div>
-              <div className="modal-input-group">
-                <label className="modal-label">Answer</label>
-                <textarea
-                  className="input textarea"
-                  placeholder="Enter the answer..."
-                  value={updateData.answer}
-                  onChange={(e) =>
-                    setUpdateData({ ...updateData, answer: e.target.value })
-                  }
-                  aria-label="Update answer"
-                  aria-required="true"
-                />
+              <div className="modal-form">
+                <div className="modal-input-group">
+                  <label className="modal-label">Question</label>
+                  <textarea
+                    className="input textarea"
+                    placeholder="Enter your question..."
+                    value={updateData.question}
+                    onChange={(e) =>
+                      setUpdateData({ ...updateData, question: e.target.value })
+                    }
+                    aria-label="Update question"
+                    aria-required="true"
+                  />
+                </div>
+                <div className="modal-input-group">
+                  <label className="modal-label">Answer</label>
+                  <textarea
+                    className="input textarea"
+                    placeholder="Enter the answer..."
+                    value={updateData.answer}
+                    onChange={(e) =>
+                      setUpdateData({ ...updateData, answer: e.target.value })
+                    }
+                    aria-label="Update answer"
+                    aria-required="true"
+                  />
+                </div>
               </div>
               <div className="modal-actions">
                 <button
@@ -807,7 +893,7 @@ function FlashcardPage() {
                   }
                   aria-label="Save updated flashcard"
                 >
-                  Save
+                  Save Changes
                 </button>
               </div>
             </div>

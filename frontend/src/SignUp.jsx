@@ -48,7 +48,7 @@ const navBarStyle = {
 
 const navLogoStyle = {
   fontSize: "1.5rem",
-  color: "#4338CA", // Indigo-600 (from Sign In)
+  color: "#4338CA", 
   fontWeight: 700,
   cursor: "pointer",
   letterSpacing: "-0.5px",
@@ -94,7 +94,7 @@ const signInButtonStyle = {
 
 const signUpButtonStyle = {
   ...navButtonStyle,
-  backgroundColor: "#6366F1", // Indigo-500 (from Sign In)
+  backgroundColor: "#6366F1",
   color: "white",
   border: "1px solid #6366F1",
 };
@@ -147,7 +147,7 @@ const formTitleStyle = {
   fontSize: "1.5rem",
   fontWeight: 700,
   marginBottom: "8px",
-  color: "#1E293B", // Slate-800 (from Sign In)
+  color: "#1E293B",
   "@media (maxWidth: 480px)": {
     fontSize: "1.3rem",
   },
@@ -155,7 +155,7 @@ const formTitleStyle = {
 
 const formSubtitleStyle = {
   fontSize: "0.875rem",
-  color: "#64748B", // Slate-500 (from Sign In)
+  color: "#64748B", 
   marginBottom: "32px",
   fontWeight: 400,
   "@media (maxWidth: 480px)": {
@@ -170,11 +170,11 @@ const inputStyle = {
   padding: "12px 16px",
   marginBottom: "20px",
   borderRadius: "8px",
-  border: "1px solid #CBD5E1", // Slate-300 (from Sign In)
+  border: "1px solid #CBD5E1", 
   fontSize: "0.9375rem",
   transition: "all 0.2s ease",
   boxSizing: "border-box",
-  backgroundColor: "#F8FAFC", // Slate-50 (from Sign In)
+  backgroundColor: "#F8FAFC", 
   "@media (maxWidth: 480px)": {
     padding: "10px 14px",
     fontSize: "0.875rem",
@@ -183,7 +183,7 @@ const inputStyle = {
 };
 
 const inputFocusStyle = {
-  borderColor: "#6366F1", // Indigo-500 (from Sign In)
+  borderColor: "#6366F1", 
   outline: "none",
   boxShadow: "0 0 0 3px rgba(99, 102, 241, 0.2)",
   backgroundColor: "white",
@@ -192,7 +192,7 @@ const inputFocusStyle = {
 const submitButtonStyle = {
   width: "100%",
   padding: "12px",
-  backgroundColor: "#6366F1", // Indigo-500 (from Sign In)
+  backgroundColor: "#6366F1", 
   color: "white",
   border: "none",
   borderRadius: "8px",
@@ -304,7 +304,7 @@ function SignUp() {
       );
 
       if (response.data.success) {
-        // Redirect to decks page after successful signup
+        
         navigate("/decks");
       } else {
         throw new Error(response.data.message || "Registration failed");

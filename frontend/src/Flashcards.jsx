@@ -1,269 +1,13 @@
-import React, { useState, useEffect } from "react";
+
+
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import "./styles/AllFlashcards.css";
 
 const getAuthHeaders = () => {
   const firebaseToken = localStorage.getItem("firebaseToken");
   return firebaseToken ? { Authorization: `Bearer ${firebaseToken}` } : {};
-};
-
-// Modern color palette
-const colors = {
-  primary: "#4F46E5", // Indigo
-  primaryHover: "#4338CA", // Darker indigo
-  primaryLight: "#E0E7FF", // Light indigo
-  secondary: "#10B981", // Emerald
-  secondaryHover: "#0D9C6F",
-  background: "#F9FAFB", // Light gray
-  cardBg: "#FFFFFF", // White
-  textDark: "#111827", // Gray-900
-  textMedium: "#6B7280", // Gray-500
-  textLight: "#9CA3AF", // Gray-400
-  border: "#E5E7EB", // Gray-200
-  borderLight: "#F3F4F6", // Gray-100
-  error: "#EF4444", // Red-500
-  errorHover: "#DC2626",
-  success: "#10B981", // Emerald-500
-  accent: "#6366F1", // Indigo-400
-  highlight: "#E0E7FF", // Indigo-100
-  shadow: "rgba(0, 0, 0, 0.05)",
-  overlay: "rgba(0, 0, 0, 0.4)",
-};
-
-// Styles
-const styles = {
-  container: {
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    padding: "1.5rem",
-    backgroundColor: colors.background,
-    minHeight: "100vh",
-    maxWidth: "1200px",
-    margin: "0 auto",
-    "@media (max-width: 768px)": {
-      padding: "1rem",
-    },
-  },
-  navBar: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.cardBg,
-    padding: "16px 5%",
-    boxShadow: `0 2px 4px ${colors.shadow}`,
-    zIndex: 1000,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottom: `1px solid ${colors.borderLight}`,
-  },
-  navTitle: {
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    color: colors.textDark,
-    margin: 0,
-  },
-  backButton: {
-    padding: "0.75rem 1rem",
-    borderRadius: "8px",
-    backgroundColor: "transparent",
-    color: colors.primary,
-    border: `1px solid ${colors.border}`,
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: "0.875rem",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    transition: "all 0.2s ease",
-    ":hover": {
-      backgroundColor: colors.highlight,
-      borderColor: colors.primary,
-    },
-  },
-  contentContainer: {
-    marginTop: "5rem",
-  },
-  flashcardsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: "1.5rem",
-    "@media (max-width: 768px)": {
-      gridTemplateColumns: "1fr",
-    },
-  },
-  card: {
-    backgroundColor: colors.cardBg,
-    padding: "1.5rem",
-    borderRadius: "12px",
-    boxShadow: `0 2px 8px ${colors.shadow}`,
-    border: `1px solid ${colors.border}`,
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-    ":hover": {
-      transform: "translateY(-4px)",
-      boxShadow: `0 4px 12px ${colors.shadow}`,
-    },
-  },
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "1rem",
-    paddingBottom: "1rem",
-    borderBottom: `1px solid ${colors.borderLight}`,
-  },
-  deckTitle: {
-    fontSize: "0.75rem",
-    fontWeight: 600,
-    color: colors.primary,
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.375rem",
-  },
-  buttonGroup: {
-    display: "flex",
-    gap: "0.5rem",
-    alignItems: "center",
-  },
-  iconButton: {
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "0.5rem",
-    borderRadius: "6px",
-    color: colors.textLight,
-    transition: "all 0.2s ease",
-    ":hover": {
-      backgroundColor: colors.highlight,
-      color: colors.primary,
-    },
-  },
-  deleteButton: {
-    backgroundColor: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "0.5rem",
-    borderRadius: "6px",
-    color: colors.textLight,
-    transition: "all 0.2s ease",
-    ":hover": {
-      backgroundColor: "rgba(239, 68, 68, 0.1)",
-      color: colors.error,
-    },
-  },
-  question: {
-    fontSize: "1.125rem",
-    fontWeight: 500,
-    color: colors.textDark,
-    marginBottom: "1rem",
-    lineHeight: "1.5",
-    wordBreak: "break-word",
-    whiteSpace: "normal",
-  },
-  answer: {
-    fontSize: "1rem",
-    color: colors.textMedium,
-    backgroundColor: colors.borderLight,
-    padding: "1rem",
-    borderRadius: "8px",
-    lineHeight: "1.5",
-    borderLeft: `4px solid ${colors.primary}`,
-    wordBreak: "break-word",
-    whiteSpace: "normal",
-  },
-  editForm: {
-    marginTop: "1rem",
-  },
-  textarea: {
-    width: "100%",
-    padding: "0.75rem",
-    borderRadius: "8px",
-    border: `1px solid ${colors.border}`,
-    fontFamily: "'Inter', sans-serif",
-    fontSize: "1rem",
-    resize: "vertical",
-    minHeight: "80px",
-    maxHeight: "150px",
-    transition: "all 0.2s ease",
-    boxSizing: "border-box",
-    ":focus": {
-      outline: "none",
-      borderColor: colors.primary,
-      boxShadow: `0 0 0 3px ${colors.highlight}`,
-    },
-  },
-  saveButton: {
-    padding: "0.75rem 1.5rem",
-    borderRadius: "8px",
-    backgroundColor: colors.primary,
-    color: "white",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: "0.875rem",
-    marginRight: "0.75rem",
-    transition: "all 0.2s ease",
-    ":hover": {
-      backgroundColor: colors.primaryHover,
-    },
-  },
-  cancelButton: {
-    padding: "0.75rem 1.5rem",
-    borderRadius: "8px",
-    backgroundColor: "transparent",
-    color: colors.textDark,
-    border: `1px solid ${colors.border}`,
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: "0.875rem",
-    transition: "all 0.2s ease",
-    ":hover": {
-      backgroundColor: colors.borderLight,
-    },
-  },
-  emptyState: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "3rem 1.5rem",
-    backgroundColor: colors.cardBg,
-    borderRadius: "12px",
-    border: `1px dashed ${colors.border}`,
-    marginTop: "1.5rem",
-    textAlign: "center",
-  },
-  emptyStateIcon: {
-    width: "48px",
-    height: "48px",
-    marginBottom: "1rem",
-    color: colors.textLight,
-  },
-  errorMessage: {
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
-    padding: "0.75rem 1rem",
-    borderRadius: "8px",
-    border: `1px solid ${colors.error}`,
-    color: colors.error,
-    marginBottom: "1.5rem",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  loadingSpinner: {
-    width: "2.5rem",
-    height: "2.5rem",
-    border: `4px solid ${colors.borderLight}`,
-    borderTop: `4px solid ${colors.primary}`,
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
-  },
-  "@keyframes spin": {
-    "0%": { transform: "rotate(0deg)" },
-    "100%": { transform: "rotate(360deg)" },
-  },
 };
 
 function Flashcards() {
@@ -276,10 +20,23 @@ function Flashcards() {
     answer: "",
   });
   const [deckTitle, setDeckTitle] = useState("All Flashcards");
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const navigate = useNavigate();
   const { deckId } = useParams();
   const baseURL =
     import.meta.env.VITE_API_URL || "http://localhost:5000/api/flashcards";
+
+  useEffect(() => {
+    // Check for dark mode
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "dark") {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setIsDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
   useEffect(() => {
     const fetchDeckDetailsAndFlashcards = async () => {
@@ -384,11 +141,11 @@ function Flashcards() {
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={styles.navBar}>
-          <h1 style={styles.navTitle}>Loading...</h1>
+      <div className="flashcards-container">
+        <div className="flashcards-nav-bar">
+          <h1 className="flashcards-nav-title">Loading...</h1>
           <button
-            style={styles.backButton}
+            className="flashcards-back-button"
             onClick={handleBack}
             aria-label="Back"
           >
@@ -407,51 +164,46 @@ function Flashcards() {
             Back
           </button>
         </div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "80vh",
-          }}
-        >
-          <div style={styles.loadingSpinner}></div>
+        <div className="flashcards-loading-container">
+          <div
+            className="flashcards-loading-spinner"
+            role="status"
+            aria-label="Loading flashcards"
+          ></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.navBar}>
-        <h1 style={styles.navTitle}>{deckTitle}</h1>
-        <div style={styles.buttonGroup}>
-          
-          <button
-            style={styles.backButton}
-            onClick={handleBack}
-            aria-label="Back"
+    <div className="flashcards-container">
+      <div className="flashcards-nav-bar">
+        <button
+          className="flashcards-back-button"
+          onClick={handleBack}
+          aria-label="Back"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-        </div>
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+        <h1 className="flashcards-nav-title">{deckTitle}</h1>
+        <div>{" "}</div>
       </div>
 
-      <div style={styles.contentContainer}>
+      <div className="flashcards-content-container">
         {error && (
-          <div style={styles.errorMessage}>
+          <div className="flashcards-error-message" role="alert">
             <svg
               width="16"
               height="16"
@@ -471,9 +223,9 @@ function Flashcards() {
         )}
 
         {flashcards.length === 0 ? (
-          <div style={styles.emptyState}>
+          <div className="flashcards-empty-state">
             <svg
-              style={styles.emptyStateIcon}
+              className="flashcards-empty-state-icon"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -485,50 +237,40 @@ function Flashcards() {
               <path d="M3 9h18" />
               <path d="M9 9v12" />
             </svg>
-            <h3
-              style={{
-                color: colors.textDark,
-                marginBottom: "0.5rem",
-                fontSize: "1.25rem",
-                fontWeight: 600,
-              }}
-            >
-              No flashcards found
-            </h3>
-            <p
-              style={{
-                color: colors.textMedium,
-                marginBottom: "1.5rem",
-                maxWidth: "400px",
-              }}
-            >
+            <h3>No flashcards found</h3>
+            <p>
               {deckId
                 ? "This deck doesn't have any flashcards yet. Go to the deck to create your first flashcard."
                 : "You haven't created any flashcards yet. Go to a deck to create your first flashcard."}
             </p>
             {deckId && (
               <button
-                style={{
-                  ...styles.backButton,
-                  backgroundColor: colors.primary,
-                  color: "white",
-                  ":hover": {
-                    backgroundColor: colors.primaryHover,
-                  },
-                }}
+                className="button"
                 onClick={() => navigate(`/decks/${deckId}`)}
                 aria-label="Go to deck"
               >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M3 3h18v18H3z" />
+                  <path d="M3 9h18" />
+                  <path d="M9 9v12" />
+                </svg>
                 Go to Deck
               </button>
             )}
           </div>
         ) : (
-          <div style={styles.flashcardsGrid}>
+          <div className="flashcards-grid">
             {flashcards.map((flashcard) => (
-              <div key={flashcard._id} style={styles.card}>
-                <div style={styles.cardHeader}>
-                  <span style={styles.deckTitle}>
+              <div key={flashcard._id} className="flashcard-item">
+                <div className="flashcard-header">
+                  <span className="flashcard-deck-title">
                     <svg
                       width="14"
                       height="14"
@@ -545,10 +287,9 @@ function Flashcards() {
                     </svg>
                     {deckTitle || "Untitled Deck"}
                   </span>
-                  <div style={styles.buttonGroup}>
-                    
+                  <div className="flashcard-button-group">
                     <button
-                      style={styles.iconButton}
+                      className="flashcard-icon-button"
                       onClick={() => handleEdit(flashcard)}
                       disabled={editingId === flashcard._id}
                       aria-label="Edit flashcard"
@@ -568,7 +309,7 @@ function Flashcards() {
                       </svg>
                     </button>
                     <button
-                      style={styles.deleteButton}
+                      className="flashcard-delete-button"
                       onClick={() => handleDelete(flashcard._id)}
                       aria-label="Delete flashcard"
                     >
@@ -590,9 +331,9 @@ function Flashcards() {
                   </div>
                 </div>
                 {editingId === flashcard._id ? (
-                  <div style={styles.editForm}>
+                  <div className="flashcard-edit-form">
                     <textarea
-                      style={styles.textarea}
+                      className="flashcard-textarea"
                       value={editFormData.question}
                       onChange={(e) =>
                         setEditFormData({
@@ -605,7 +346,7 @@ function Flashcards() {
                       aria-label="Edit question"
                     />
                     <textarea
-                      style={styles.textarea}
+                      className="flashcard-textarea"
                       value={editFormData.answer}
                       onChange={(e) =>
                         setEditFormData({
@@ -616,16 +357,16 @@ function Flashcards() {
                       placeholder="Answer"
                       aria-label="Edit answer"
                     />
-                    <div>
+                    <div className="flashcard-form-buttons">
                       <button
-                        style={styles.saveButton}
+                        className="flashcard-save-button"
                         onClick={() => handleSaveEdit(flashcard._id)}
                         aria-label="Save changes"
                       >
                         Save Changes
                       </button>
                       <button
-                        style={styles.cancelButton}
+                        className="flashcard-cancel-button"
                         onClick={handleCancelEdit}
                         aria-label="Cancel edit"
                       >
@@ -635,8 +376,10 @@ function Flashcards() {
                   </div>
                 ) : (
                   <>
-                    <div style={styles.question}>{flashcard.question}</div>
-                    <div style={styles.answer}>{flashcard.answer}</div>
+                    <div className="flashcard-question">
+                      {flashcard.question}
+                    </div>
+                    <div className="flashcard-answer">{flashcard.answer}</div>
                   </>
                 )}
               </div>

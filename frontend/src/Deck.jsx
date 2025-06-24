@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles/Deck.css";
-import { auth } from "./config/firebase";
-import { signOut } from "firebase/auth";
+import { ProfileDropdown } from "./components/ProfileDropdown";
+import ThemeToggle from "./components/ThemeToggle";
+import logo from "./assets/WeFlashLogo.png"
 
 const getAuthHeaders = () => {
   const firebaseToken = localStorage.getItem("firebaseToken");
   const userId = localStorage.getItem("userId");
-
   if (firebaseToken) {
     return {
       Authorization: `Bearer ${firebaseToken}`,
@@ -21,6 +21,7 @@ const getAuthHeaders = () => {
     return {};
   }
 };
+
 const deleteDeck = async (deckId, e) => {
   e.stopPropagation();
   try {
@@ -37,95 +38,6 @@ const deleteDeck = async (deckId, e) => {
   }
 };
 
-const ProfileDropdown = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [userInitial, setUserInitial] = useState("?");
-  const [displayName, setDisplayName] = useState("User");
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (user) {
-      const name = user.displayName || "User";
-      setDisplayName(name);
-      setUserInitial(name.charAt(0).toUpperCase());
-    }
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      localStorage.removeItem("firebaseToken");
-      navigate("/");
-    } catch (err) {
-      console.error("Logout failed:", err);
-      alert("Logout failed. Please try again.");
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isOpen && !event.target.closest("[data-profile-dropdown]")) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
-
-  return (
-    <div style={{ position: "relative" }} data-profile-dropdown>
-      <div
-        className="profile-circle"
-        onClick={() => setIsOpen(!isOpen)}
-        role="button"
-        aria-label={`Toggle profile menu for ${displayName}`}
-        aria-expanded={isOpen}
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          backgroundColor: "#6366F1", // Indigo
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: "bold",
-          fontSize: "1rem",
-          cursor: "pointer",
-        }}
-      >
-        {userInitial}
-      </div>
-
-      <div className={`profile-dropdown ${isOpen ? "show" : ""}`}>
-        <div className="dropdown-item" role="menuitem">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          {displayName}
-        </div>
-
-        <div className="dropdown-divider" />
-
-        <div
-          className="dropdown-item"
-          onClick={handleLogout}
-          role="menuitem"
-          aria-label="Logout"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Logout
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 function DeckPage() {
@@ -137,7 +49,8 @@ function DeckPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
   useEffect(() => {
     fetchDecks();
   }, []);
@@ -267,7 +180,7 @@ function DeckPage() {
   };
 
   return (
-    <div className="deck-container">
+    <div className={`deck-container ${isDarkMode ? "dark" : ""}`}>
       <div className="nav-bar">
         <div
           className="nav-title"
@@ -275,20 +188,12 @@ function DeckPage() {
           role="button"
           aria-label="Navigate to Decks"
         >
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="9" y1="21" x2="9" y2="9" />
-          </svg>
-          WeFlash
+          <div className="logo-icon">
+            <img src={logo} style={{width: "40px", height: "40px"}} />
+          </div>
+          <span className="logo-text">WeFlash</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div className="nav-actions">
           <button
             onClick={handleCreateDeck}
             className="nav-button"
@@ -300,20 +205,27 @@ function DeckPage() {
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="white"
+              stroke="currentColor"
+              strokeWidth="2"
             >
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            New Deck
+            <span>New Deck</span>
           </button>
+          <ThemeToggle />
           <ProfileDropdown />
         </div>
       </div>
 
       <div className="decks-container">
         <div className="header-container">
-          <h1 className="header">Your Decks</h1>
+          <div className="header-section">
+            <h1 className="header">Your Decks</h1>
+            <p className="header-subtitle">
+              Manage and organize your flashcard collections
+            </p>
+          </div>
           <div className="search-container">
             <svg
               className="search-icon"
@@ -322,6 +234,7 @@ function DeckPage() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              strokeWidth="2"
             >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -340,30 +253,42 @@ function DeckPage() {
         {loading ? (
           <div className="loading">
             <div className="spinner" role="status" aria-label="Loading decks" />
+            <p className="loading-text">Loading your decks...</p>
           </div>
         ) : error ? (
-          <div className="empty-state" role="alert">
+          <div className="empty-state error-state" role="alert">
             <svg
               className="empty-state-icon"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              strokeWidth="2"
             >
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <h3 style={{ color: "var(--text-dark)", marginBottom: "0.5rem" }}>
-              Error Loading Decks
-            </h3>
-            <p style={{ marginBottom: "1.5rem" }}>{error}</p>
+            <h3>Error Loading Decks</h3>
+            <p>{error}</p>
             <button
               onClick={fetchDecks}
-              className="button"
-              style={{ backgroundColor: "var(--error)" }}
+              className="button error-button"
               role="button"
               aria-label="Retry loading decks"
             >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M3 21v-5h5" />
+              </svg>
               Retry
             </button>
           </div>
@@ -374,18 +299,17 @@ function DeckPage() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
+              strokeWidth="2"
             >
               <path d="M3 3h18v18H3z" />
               <path d="M3 9h18" />
               <path d="M9 9v12" />
             </svg>
-            <h3 style={{ color: "var(--text-dark)", marginBottom: "0.5rem" }}>
-              {searchTerm ? "No matching decks" : "No decks yet"}
-            </h3>
-            <p style={{ marginBottom: "1.5rem" }}>
+            <h3>{searchTerm ? "No matching decks found" : "No decks yet"}</h3>
+            <p>
               {searchTerm
-                ? "Try a different search term"
-                : "Create your first deck to get started"}
+                ? "Try adjusting your search terms"
+                : "Create your first deck to get started with flashcards"}
             </p>
             <button
               onClick={handleCreateDeck}
@@ -398,13 +322,13 @@ function DeckPage() {
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="white"
-                style={{ marginRight: "0.5rem" }}
+                stroke="currentColor"
+                strokeWidth="2"
               >
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              Create Deck
+              Create Your First Deck
             </button>
           </div>
         ) : (
@@ -423,18 +347,20 @@ function DeckPage() {
               >
                 <div className="deck-card-header">
                   <h3 className="deck-title">{deck.title}</h3>
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    style={{ flexShrink: 0 }}
-                  >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <line x1="3" y1="9" x2="21" y2="9" />
-                    <line x1="9" y1="21" x2="9" y2="9" />
-                  </svg>
+                  <div className="deck-icon">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <line x1="3" y1="9" x2="21" y2="9" />
+                      <line x1="9" y1="21" x2="9" y2="9" />
+                    </svg>
+                  </div>
                 </div>
                 <p className="deck-description">
                   {deck.description || "No description provided"}
@@ -447,12 +373,14 @@ function DeckPage() {
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
+                      strokeWidth="2"
                     >
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                       <line x1="3" y1="9" x2="21" y2="9" />
                       <line x1="9" y1="21" x2="9" y2="9" />
                     </svg>
-                    {deck.cardCount || 0} cards
+                    {deck.cardCount || 0}{" "}
+                    {deck.cardCount === 1 ? "card" : "cards"}
                   </span>
                 </div>
                 <button
@@ -462,11 +390,12 @@ function DeckPage() {
                   aria-label={`Delete deck: ${deck.title}`}
                 >
                   <svg
-                    width="20"
-                    height="20"
+                    width="18"
+                    height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
+                    strokeWidth="2"
                   >
                     <path d="M3 6h18" />
                     <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
@@ -482,65 +411,57 @@ function DeckPage() {
       {showModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-content">
-            <h2 className="modal-header">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Create New Deck
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <label
-                htmlFor="title"
-                style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
-                  color: "var(--text-dark)",
-                  fontWeight: 500,
-                  cursor: "default",
-                }}
-              >
-                Deck Title
-              </label>
-              <input
-                id="title"
-                name="title"
-                placeholder="Enter deck title"
-                value={newDeck.title}
-                onChange={handleInputChange}
-                required
-                className="input"
-                autoFocus
-                aria-required="true"
-              />
-              <label
-                htmlFor="description"
-                style={{
-                  display: "block",
-                  marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
-                  color: "var(--text-dark)",
-                  fontWeight: 500,
-                  cursor: "default",
-                }}
-              >
-                Description (optional)
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                placeholder="Enter deck description"
-                value={newDeck.description}
-                onChange={handleInputChange}
-                className="input textarea"
-              />
+            <div className="modal-header">
+              <div className="modal-icon">
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </div>
+              <div>
+                <h2>Create New Deck</h2>
+                <p className="modal-subtitle">
+                  Start building your flashcard collection
+                </p>
+              </div>
+            </div>
+            <form onSubmit={handleSubmit} className="modal-form">
+              <div className="form-group">
+                <label htmlFor="title" className="form-label">
+                  Deck Title *
+                </label>
+                <input
+                  id="title"
+                  name="title"
+                  placeholder="Enter a descriptive title for your deck"
+                  value={newDeck.title}
+                  onChange={handleInputChange}
+                  required
+                  className="input"
+                  autoFocus
+                  aria-required="true"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="description" className="form-label">
+                  Description (optional)
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  placeholder="Add a brief description of what this deck covers"
+                  value={newDeck.description}
+                  onChange={handleInputChange}
+                  className="input textarea"
+                />
+              </div>
               <div className="modal-footer">
                 <button
                   type="button"
@@ -553,20 +474,13 @@ function DeckPage() {
                 <button
                   type="submit"
                   className="button"
-                  style={{
-                    opacity: isCreating ? 0.8 : 1,
-                    pointerEvents: isCreating ? "none" : "auto",
-                  }}
                   disabled={isCreating}
                   aria-label={isCreating ? "Creating deck" : "Create deck"}
                 >
                   {isCreating ? (
                     <>
                       <svg
-                        style={{
-                          marginRight: "0.5rem",
-                          animation: "spin 1s linear infinite",
-                        }}
+                        className="spinner-small"
                         width="20"
                         height="20"
                         viewBox="0 0 24 24"
@@ -574,7 +488,7 @@ function DeckPage() {
                       >
                         <path
                           d="M12 2V6M12 18V22M6 12H2M22 12H18M19.0784 19.0784L16.25 16.25M19.0784 4.99994L16.25 7.82837M4.92157 19.0784L7.75 16.25M4.92157 4.99994L7.75 7.82837"
-                          stroke="white"
+                          stroke="currentColor"
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -583,7 +497,20 @@ function DeckPage() {
                       Creating...
                     </>
                   ) : (
-                    "Create Deck"
+                    <>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      Create Deck
+                    </>
                   )}
                 </button>
               </div>
@@ -591,6 +518,26 @@ function DeckPage() {
           </div>
         </div>
       )}
+
+      <button
+        onClick={handleCreateDeck}
+        className="fab-button"
+        role="button"
+        aria-label="Create New Deck"
+        title="Create New Deck"
+      >
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </button>
     </div>
   );
 }

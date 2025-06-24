@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import backgroundImg from "./assets/furfle.png";
-import icon from "./assets/illus.png";
 import "./styles/Landing.css";
 
 const Landing = () => {

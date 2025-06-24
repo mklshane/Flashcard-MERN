@@ -172,11 +172,11 @@
 }
 
 .mockup-container {
-  background: var(--surface);
+  background: #ffffff;
   border-radius: 20px;
   padding: 1.5rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--border);
+  border: 1px solid #e5e7eb;
   max-width: 400px;
   width: 100%;
 }
@@ -235,7 +235,7 @@
 }
 
 .card-btn {
-  background: var(--gradient);
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -247,7 +247,7 @@
 }
 
 .card-btn:hover {
-  background: var(--gradient-hover);
+  background: linear-gradient(135deg, #4338CA 0%, #6D28D9 100%);
   transform: translateY(-1px);
 }
 
